@@ -1,24 +1,36 @@
-// postという名前の関数を作成して一連の処理をまとめている
-function post (){
-// formという変数にHTMLページの中にあるIDが「form」の要素を入れている
- const form = document.getElementById("form");
-//  submit=送信さらるときに何をするかを決めているaddEventListenerはイベントのリスナーを追加している
-// preventDefaultでイベントを止めている
- form.addEventListener("submit" ,(e) => {
-  e.preventDefault();
-//formDataといった新しい変数に、フォームのデータをいれていて、このデータにはユーザーが入力した内容が含まれている
-  const formData = new FormData(form);
-//JavaScriptを用いてサーバーとHTTP通信を行うためXMLHttpRequestオブジェクトを作成し非同期通信を行う
-  const XHR = new XMLHttpRequest();
-//ページ全体を止めることなく処理をするためリクエストを初期化しリクエストの内容を指定している
-//"post"はこれは送信方法（「ポストする」という意味）。"/posts"は送り先のURL。そして最後のtrueは非同期的に行うことを意味
-  XHR.open("post", "/posts",true);
-//このXHRの応答がJSON形式（データのフォーマットの一つ）であることを設定
-  XHR.responseType = "json";
-// sendメソッドを使って、フォームデータをサーバーに送信
-  XHR.send(formData);
- });
+const buildHTML = (XHR) => {
+  const item = XHR.response.post;
+  const html = `
+    <div class="post">
+      <div class="post-date">
+        投稿日時：${item.created_at}
+      </div>
+      <div class="post-content">
+        ${item.content}
+      </div>
+    </div>`;
 };
-//ウェブページが読み込み終わったときにpost関数を実行するようにしています
-// フォォームが送信されたときに、そのデータをサーバーに送るための準備をしています。そしてページがリロードされないようにしてデータだけを送るようにしています。
+
+function post (){
+  const form = document.getElementById("form");
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const formData = new FormData(form);
+    const XHR = new XMLHttpRequest();
+    XHR.open("POST", "/posts", true);
+    XHR.responseType = "json";
+    XHR.send(formData);
+    XHR.onload = () => {
+      if (XHR.status != 200) {
+        alert(`Error ${XHR.status}: ${XHR.statusText}`);
+        return null;
+      };
+      const list = document.getElementById("list");
+      const formText = document.getElementById("content");
+      list.insertAdjacentHTML("afterend", buildHTML(XHR));
+      formText.value = "";
+    };
+  });
+};
+
 window.addEventListener('turbo:load', post);
